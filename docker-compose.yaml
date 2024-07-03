@@ -1,0 +1,52 @@
+version: '3'
+services:
+
+  postgres:
+    image: postgres
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: uuid
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+
+  uuidsh:
+    image: postgres
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: /bin/bash /app/uuidpg.sh
+    environment:
+      PGHOST: postgres
+      PGDATABASE: uuid
+      PGUSER: user
+      PGPASSWORD: pass
+    env_file: .env
+    depends_on:
+      - postgres
+
+  redis:
+    image: redis
+    volumes:
+      - ./data:/data
+    command: redis-server --save 5 1 --loglevel warning
+
+  uuidrs:
+    image: golang:alpine
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: /bin/sh /app/uuidgo.sh
+    environment:
+      REDIS_SERVER: redis:6379
+    env_file: .env
+    depends_on:
+      - redis
+
+  uuidgo:
+    image: golang:alpine
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: /bin/sh /app/uuidgo.sh
+    env_file: .env
